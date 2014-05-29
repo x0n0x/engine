@@ -1266,6 +1266,7 @@ describe 'End - to - End', ->
             </style>
           """
         engine.once 'display', (e) ->
+          console.log JSON.stringify engine.vars
           expect(engine.vars).to.eql 
             "$cont1[width]": 100
             "$cont1[x]": 0            
@@ -1278,6 +1279,77 @@ describe 'End - to - End', ->
             "$b1[width]": 50                                    
             "$b2[width]": 50
           done()
+
+    describe 'nested selectors', ->
+      it 'should compute values', (done) ->                            
+        container.innerHTML =  """
+            <section id="cont1" class="cont">
+              <div id="a1" class="a"></div>
+              <div id="a2" class="a"></div>
+            </section>
+            <div id="a3" class="a"></div>          
+            <style type="text/gss">
+              [something] == 100;
+
+              #a1:not([disabled]) {
+                (::parent .a)[width] == [something];
+              }                           
+            </style>
+          """
+        GSS.config.debug = true
+        a1 = container.getElementsByClassName('a')[0]
+        a2 = container.getElementsByClassName('a')[1]
+        cont = a2.parentNode
+        engine.once 'solved', (e) ->
+          expect(engine.vars).to.eql 
+            "[something]": 100
+            "$a1[width]": 100                                   
+            "$a2[width]": 100
+          expect(stringify(engine.lastWorkerCommands)).to.eql stringify([
+            ['eq', ['get','[something]'], ['number',100]]
+            ['eq', ['get$','width','$a1', '#a1:not([disabled])::parent .a$a1'], ['get','[something]']]
+            ['eq', ['get$','width','$a2', '#a1:not([disabled])::parent .a$a1'], ['get','[something]']]
+          ])
+
+          # Remove child
+          cont.removeChild(a2)
+          engine.once 'solved', ->
+            expect(engine.vars).to.eql 
+              "[something]": 100
+              "$a1[width]": 100 
+              expect(stringify(engine.lastWorkerCommands)).to.eql stringify([
+                ['remove', '$a2']
+              ])
+
+            # Add child back
+            cont.appendChild(a2)
+            engine.once 'solved', ->
+              expect(engine.vars).to.eql 
+                "[something]": 100
+                "$a1[width]": 100                                 
+                "$a2[width]": 100
+              expect(stringify(engine.lastWorkerCommands)).to.eql stringify([
+                ['eq', ['get$','width','$a2', '#a1:not([disabled])::parent .a$a1'], ['get','[something]']]
+              ])
+              # Change #a2 id
+              a1.setAttribute('disabled', 'disabled')
+
+              engine.once 'solved', ->
+                expect(stringify(engine.lastWorkerCommands)).to.eql stringify([
+                  ['remove', '#a1:not([disabled])$a1', '#a1:not([disabled])::parent .a$a1']
+                ])
+                expect(engine.vars).to.eql
+                  "[something]": 100
+                # Change it back
+                a1.removeAttribute('disabled', 'disabled')
+                engine.once 'solved', ->
+                  expect(engine.vars).to.eql 
+                    "[something]": 100
+                    "$a1[width]": 100                                 
+                    "$a2[width]": 100
+                  done()
+
+
     
     describe 'Implicit VFL', ->
   

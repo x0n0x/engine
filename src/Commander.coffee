@@ -791,6 +791,7 @@ class Commander
     else if keyword == "scope" && !selector
       path = pathKey = pseudo
     else
+      if !@[pseudo] then throw new Error pseudo + " is not supported"
       parentRule = root.parentRule
       if !parentRule then throw new Error pseudo + " query requires parent rule for context"    
       query = parentRule.getContextQuery()
