@@ -1,4 +1,4 @@
-/* gss-engine - version 1.0.4-beta (2014-05-29) - http://gridstylesheets.org */
+/* gss-engine - version 1.0.4-beta (2014-05-30) - http://gridstylesheets.org */
 ;(function(){
 
 /**
@@ -2908,7 +2908,7 @@ module.exports = (function() {
         peg$c140 = "(::",
         peg$c141 = { type: "literal", value: "(::", description: "\"(::\"" },
         peg$c142 = function(reserved, sel) { 
-            sel=p.toString(sel); return {selector: sel,ast:["$reserved", reserved || "this", sel]} 
+            sel=p.toString(sel); return {selector: "::" + (reserved || "") + " " + sel,ast:["$reserved", reserved, sel] } 
           },
         peg$c143 = function(sel) { 
             sel=p.toString(sel); return {selector:sel,ast:["$all",sel]} 
@@ -21925,7 +21925,6 @@ Engine = (function(_super) {
   };
 
   Engine.prototype.registerCommand = function(command) {
-    console.log(command);
     this.workerCommands.push(command);
     this.setNeedsLayout(true);
     return this;
@@ -23861,6 +23860,8 @@ Thread = (function() {
     this.elements = {};
     this.constraintsByTracker = {};
     this.varIdsByTracker = {};
+    this.parentTrackers = {};
+    this.childrenTrackers = {};
     this.conditionals = [];
     this.activeClauses = [];
     this.__editVarNames = [];
@@ -23881,6 +23882,8 @@ Thread = (function() {
     this.conditionals = null;
     this.activeClauses = null;
     this.__editVarNames = null;
+    this.parentTrackers = null;
+    this.childrenTrackers = null;
     return this;
   };
 
@@ -23967,13 +23970,29 @@ Thread = (function() {
   };
 
   Thread.prototype._trackRootIfNeeded = function(root, tracker) {
+    var trackers;
     if (tracker) {
       root._is_tracked = true;
-      if (!root._trackers) {
-        root._trackers = [];
+      trackers = root._trackers || (root._trackers = []);
+      if (trackers.indexOf(tracker) === -1) {
+        if (tracker === "#a1:not([disabled])::parent .a$a1$a2") {
+          debugger;
+        }
+        return trackers.push(tracker);
       }
-      if (root._trackers.indexOf(tracker) === -1) {
-        return root._trackers.push(tracker);
+    }
+  };
+
+  Thread.prototype._trackCollection = function(prefix, tracker) {
+    var children, parents, _base, _base1;
+    if (prefix) {
+      children = (_base = this.childrenTrackers)[prefix] || (_base[prefix] = []);
+      if (children.indexOf(tracker === -1)) {
+        children.push(tracker);
+      }
+      parents = (_base1 = this.parentTrackers)[tracker] || (_base1[tracker] = []);
+      if (parents.indexOf(prefix === -1)) {
+        return parents.push(prefix);
       }
     }
   };
@@ -23982,11 +24001,6 @@ Thread = (function() {
     var args, tracker, trackers, _i, _len, _results;
     args = __slice.call(arguments);
     trackers = __slice.call(args.slice(1, args.length));
-    console.log('remove', self, trackersss);
-    debugger;
-    if (trackersss[1] === "#a1::parent .a$a1") {
-      debugger;
-    }
     _results = [];
     for (_i = 0, _len = trackers.length; _i < _len; _i++) {
       tracker = trackers[_i];
@@ -23996,8 +24010,42 @@ Thread = (function() {
   };
 
   Thread.prototype._remove = function(tracker) {
+    console.log('TRY TO KILL THIS', tracker);
     this._removeConstraintByTracker(tracker);
-    return this._removeVarByTracker(tracker);
+    this._removeVarByTracker(tracker);
+    this._removeFromCollectionsByTracker(tracker);
+    return this._removeTrackersInCollectionByTracker(tracker);
+  };
+
+  Thread.prototype._removeTrackersInCollectionByTracker = function(tracker) {
+    var child, children, _i, _len;
+    if (children = this.childrenTrackers[tracker]) {
+      children = children.slice();
+      for (_i = 0, _len = children.length; _i < _len; _i++) {
+        child = children[_i];
+        this._remove(child);
+      }
+      return delete this.childrenTrackers[tracker];
+    }
+  };
+
+  Thread.prototype._removeFromCollectionsByTracker = function(tracker) {
+    var collection, combo, pairs, parent, parents, _i, _j, _len, _len1;
+    if (parents = this.parentTrackers[tracker]) {
+      pairs = null;
+      for (_i = 0, _len = parents.length; _i < _len; _i++) {
+        parent = parents[_i];
+        collection = this.childrenTrackers[parent];
+        collection.splice(collection.indexOf(tracker), 1);
+        (pairs || (pairs = [])).push(parent + tracker);
+        console.error('kill', parent + tracker);
+      }
+      for (_j = 0, _len1 = pairs.length; _j < _len1; _j++) {
+        combo = pairs[_j];
+        this._remove(combo);
+      }
+      return delete this.parentTrackers[tracker];
+    }
   };
 
   Thread.prototype._removeVarByTracker = function(tracker) {
@@ -24224,6 +24272,7 @@ Thread = (function() {
     this._trackRootIfNeeded(root, elId);
     if (selector) {
       this._trackRootIfNeeded(root, selector + elId);
+      this._trackCollection(selector, elId);
     }
     return this._get$(prop, elId);
   };
@@ -24367,7 +24416,7 @@ Thread = (function() {
   };
 
   Thread.prototype._addConstraint = function(root, constraint) {
-    var tracker, _i, _len, _ref;
+    var constraints, tracker, _base, _i, _len, _ref;
     if (!root._condition_bound) {
       this.solver.addConstraint(constraint);
     }
@@ -24375,10 +24424,11 @@ Thread = (function() {
       _ref = root._trackers;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         tracker = _ref[_i];
-        if (!this.constraintsByTracker[tracker]) {
-          this.constraintsByTracker[tracker] = [];
+        constraints = ((_base = this.constraintsByTracker)[tracker] || (_base[tracker] = []));
+        if (constraints.length) {
+          debugger;
         }
-        this.constraintsByTracker[tracker].push(constraint);
+        constraints.push(constraint);
       }
     }
     return constraint;

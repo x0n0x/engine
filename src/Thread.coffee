@@ -41,6 +41,8 @@ class Thread
     @elements             = {}
     @constraintsByTracker = {}
     @varIdsByTracker      = {}
+    @parentTrackers       = {}
+    @childrenTrackers     = {}
     @conditionals         = []
     @activeClauses        = []
     @__editVarNames       = []
@@ -63,7 +65,10 @@ class Thread
     @conditionals         = null
     @activeClauses        = null
     @__editVarNames       = null
+    @parentTrackers       = null
+    @childrenTrackers     = null
     @       
+
   
   # API
   # ------------------------------------------------
@@ -140,11 +145,25 @@ class Thread
     @_trackRootIfNeeded root, tracker
     return 'IGNORE'
     
-  _trackRootIfNeeded: (root,tracker) ->
+  _trackRootIfNeeded: (root, tracker) ->
     if tracker
       root._is_tracked = true
-      if !root._trackers then root._trackers = []
-      if  root._trackers.indexOf(tracker) is -1 then root._trackers.push(tracker)      
+      trackers = root._trackers ||= []
+      if trackers.indexOf(tracker) is -1
+        if tracker == "#a1:not([disabled])::parent .a$a1$a2"
+
+          debugger
+        trackers.push(tracker)
+
+  _trackCollection: (prefix, tracker) ->
+    if prefix
+      children = @childrenTrackers[prefix] ||= []
+      if children.indexOf tracker is -1
+        children.push(tracker)
+      parents = @parentTrackers[tracker] ||= []
+      if parents.indexOf prefix is -1
+        parents.push(prefix)
+
   
   
   # Removal
@@ -157,8 +176,31 @@ class Thread
       @_remove tracker
       
   _remove: (tracker) ->
+    console.log('TRY TO KILL THIS', tracker)
     @_removeConstraintByTracker tracker
     @_removeVarByTracker tracker
+    @_removeFromCollectionsByTracker tracker
+    @_removeTrackersInCollectionByTracker tracker
+
+  _removeTrackersInCollectionByTracker: (tracker) ->
+    if children = @childrenTrackers[tracker]
+      children = children.slice()
+      for child in children
+        @_remove child
+      delete @childrenTrackers[tracker]
+
+  _removeFromCollectionsByTracker: (tracker) ->
+    if parents = @parentTrackers[tracker]
+      pairs = null
+      for parent in parents
+        collection = @childrenTrackers[parent]
+        collection.splice collection.indexOf(tracker), 1
+        (pairs ||= []).push parent + tracker
+        console.error('kill', parent + tracker)
+      for combo in pairs
+        @_remove(combo)
+      delete @parentTrackers[tracker]
+
       
   _removeVarByTracker: (tracker) ->
     # clean up varcache
@@ -175,7 +217,6 @@ class Thread
   _removeConstraintByTracker: (tracker, permenant = true) ->
     if @constraintsByTracker[tracker]
       for constraint in @constraintsByTracker[tracker]
-        
         # TODO
         # monkey-wrenching `._gss_removed` 
         # b/c constraints are being double removed
@@ -338,10 +379,13 @@ class Thread
   
   get$: (root, prop, elId, selector) ->
         
-    @_trackRootIfNeeded root, elId    
+    @_trackRootIfNeeded root, elId   
     if selector
-      @_trackRootIfNeeded root, selector + elId    
-    
+      @_trackRootIfNeeded root, selector + elId
+      @_trackCollection selector, elId
+
+      
+
     return @_get$ prop, elId
     
         
@@ -460,8 +504,11 @@ class Thread
       @solver.addConstraint constraint
     if root._is_tracked
       for tracker in root._trackers
-        if !@constraintsByTracker[tracker] then @constraintsByTracker[tracker] = []
-        @constraintsByTracker[tracker].push constraint
+        constraints = (@constraintsByTracker[tracker] ||= [])
+        if constraints.length
+          debugger
+
+        constraints.push constraint
     return constraint
   
   # Equation Constraints
