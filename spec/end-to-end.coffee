@@ -1296,7 +1296,6 @@ describe 'End - to - End', ->
               }                           
             </style>
           """
-        GSS.config.debug = true
         a1 = container.getElementsByClassName('a')[0]
         a2 = container.getElementsByClassName('a')[1]
         cont = a2.parentNode
@@ -1337,7 +1336,7 @@ describe 'End - to - End', ->
               engine.once 'solved', ->
                 expect(stringify(engine.lastWorkerCommands)).to.eql stringify([
                   ['remove', '#a1:not([disabled])$a1', '#a1:not([disabled])::parent .a$a1']
-                ])
+                ])  
                 expect(engine.vars).to.eql
                   "[something]": 100
                 # Change it back
@@ -1349,7 +1348,72 @@ describe 'End - to - End', ->
                     "$a2[width]": 100
                   done()
 
+    describe 'plural selectors matched by multiple parent', ->
+      it 'should compute values for plural constraints and keep track of matching parents', (done) ->                            
+        container.innerHTML =  """
+            <div id="b1" class="b"></div>
+            <div id="b2" class="b"></div>
+            <section id="cont1" class="cont">
+              <div id="a1" class="a"></div>
+              <div id="a2" class="a"></div>
+            </section>     
+            <style type="text/gss">
+              [baseline] == 50;
+              (#b1.b)[something] == [baseline] * 2;
+              (#b2.b)[something] == [baseline] * 3;
 
+              .a:not([disabled]) {
+                (::parent .a)[width] == (.b)[something];
+              }                           
+            </style>
+          """
+        a1 = container.getElementsByClassName('a')[0]
+        a2 = container.getElementsByClassName('a')[1]
+        cont = a2.parentNode
+        # two elements match .a:not([disabled])
+        # each finds both of the elements
+        # so all rules are applied twice
+        engine.once 'solved', (e) ->
+          expect(engine.vars).to.eql 
+            "[baseline]": 50
+            "$b1[something]": 100                                   
+            "$b2[something]": 150
+            "$a1[width]": 100                                   
+            "$a2[width]": 150
+
+          expect(stringify(engine.lastWorkerCommands)).to.eql stringify([
+            ['eq', ['get','[baseline]'], ['number',50]]
+            ["eq",["get$","something","$b1","#b1.b"],["multiply",["get","[baseline]"],["number",2]]]
+            ["eq",["get$","something","$b2","#b2.b"],["multiply",["get","[baseline]"],["number",3]]]
+            ['eq', ['get$','width','$a1', '.a:not([disabled])::parent .a$a1'], ['get$','something','$b1', '.b']]
+            ['eq', ['get$','width','$a2', '.a:not([disabled])::parent .a$a1'], ['get$','something','$b2', '.b']]
+            ['eq', ['get$','width','$a1', '.a:not([disabled])::parent .a$a2'], ['get$','something','$b1', '.b']]
+            ['eq', ['get$','width','$a2', '.a:not([disabled])::parent .a$a2'], ['get$','something','$b2', '.b']]
+          ])
+          a1.setAttribute('disabled', 'disabled');
+          # Only one element matches now
+          # Remove one set of rules
+          engine.once 'solved', (e) ->
+            expect(stringify(engine.lastWorkerCommands)).to.eql stringify([
+              ['remove', '.a:not([disabled])$a1', '.a:not([disabled])::parent .a$a1']
+            ])
+            expect(engine.vars).to.eql 
+              "[baseline]": 50
+              "$b1[something]": 100                                   
+              "$b2[something]": 150
+              "$a1[width]": 100                                   
+              "$a2[width]": 150
+            a2.setAttribute('disabled', 'disabled');
+            window.zzzzzz = true;
+            engine.once 'solved', (e) ->
+              expect(stringify(engine.lastWorkerCommands)).to.eql stringify([
+                ['remove', '.a:not([disabled])$a2', '.a:not([disabled])::parent .a$a2']
+              ])
+              expect(engine.vars).to.eql 
+                "[baseline]": 50
+                "$b1[something]": 100                                   
+                "$b2[something]": 150
+              done()
     
     describe 'Implicit VFL', ->
   
@@ -1486,33 +1550,4 @@ describe 'End - to - End', ->
           """
         engine.once 'solved', (e) ->     
           assert true
-          done()  
-    
-      
-          
-      ###
-      .dot[width] == 2 == .dot[height];
-      .dot[border-radius] == 1;
-      .dot {
-        background-color: hsla(190,100%,70%,.4)
-      }
-      @horizontal .dot-row1 gap([plan-width]-2);
-      @horizontal .dot-row2 gap([plan-width]-2);
-      @horizontal .dot-row3 gap([plan-width]-2);
-      @horizontal .dot-row4 gap([plan-width]-2);
-      @horizontal .dot-row5 gap([plan-width]-2);
-      @horizontal .dot-row6 gap([plan-width]-2);
-      .dot-first[center-x] == #p1[left];
-      .dot-row1[center-y] == #p-r1[top];
-      .dot-row2[center-y] == #p-r2[top];
-      .dot-row3[center-y] == #p-r3[top];
-      .dot-row4[center-y] == #p-r4[top];
-      .dot-row5[center-y] == #p-r5[top];
-      .dot-row6[center-y] == #p-r5[bottom];
-
-      .asterisk {
-        color:   hsl(190,100%,50%);
-        margin-right: 9px;
-      }
-      
-      ###
+          done()

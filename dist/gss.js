@@ -23975,9 +23975,6 @@ Thread = (function() {
       root._is_tracked = true;
       trackers = root._trackers || (root._trackers = []);
       if (trackers.indexOf(tracker) === -1) {
-        if (tracker === "#a1:not([disabled])::parent .a$a1$a2") {
-          debugger;
-        }
         return trackers.push(tracker);
       }
     }
@@ -24010,41 +24007,64 @@ Thread = (function() {
   };
 
   Thread.prototype._remove = function(tracker) {
-    console.log('TRY TO KILL THIS', tracker);
     this._removeConstraintByTracker(tracker);
     this._removeVarByTracker(tracker);
-    this._removeFromCollectionsByTracker(tracker);
-    return this._removeTrackersInCollectionByTracker(tracker);
+    this._removeTrackersInCollectionByTracker(tracker);
+    return this._removeFromCollectionsByTracker(tracker);
   };
 
   Thread.prototype._removeTrackersInCollectionByTracker = function(tracker) {
-    var child, children, _i, _len;
+    var child, children, _i, _j, _len, _len1;
     if (children = this.childrenTrackers[tracker]) {
       children = children.slice();
       for (_i = 0, _len = children.length; _i < _len; _i++) {
         child = children[_i];
-        this._remove(child);
+        this._removeFromCollectionByTracker(tracker, child);
+      }
+      for (_j = 0, _len1 = children.length; _j < _len1; _j++) {
+        child = children[_j];
+        this._removeTrackerWithoutCollections(tracker, child);
       }
       return delete this.childrenTrackers[tracker];
     }
   };
 
+  Thread.prototype._removeTrackerWithoutCollections = function(tracker, id) {
+    var parent, parents, _i, _len;
+    if (parents = this.parentTrackers[id]) {
+      for (_i = 0, _len = parents.length; _i < _len; _i++) {
+        parent = parents[_i];
+        if (parent && parent !== tracker) {
+          return;
+        }
+      }
+      return this._remove(id);
+    }
+  };
+
   Thread.prototype._removeFromCollectionsByTracker = function(tracker) {
-    var collection, combo, pairs, parent, parents, _i, _j, _len, _len1;
+    var pairs, parent, parents, _i, _len;
     if (parents = this.parentTrackers[tracker]) {
       pairs = null;
       for (_i = 0, _len = parents.length; _i < _len; _i++) {
         parent = parents[_i];
-        collection = this.childrenTrackers[parent];
-        collection.splice(collection.indexOf(tracker), 1);
-        (pairs || (pairs = [])).push(parent + tracker);
-        console.error('kill', parent + tracker);
-      }
-      for (_j = 0, _len1 = pairs.length; _j < _len1; _j++) {
-        combo = pairs[_j];
-        this._remove(combo);
+        this._removeFromCollectionByTracker(tracker, parent);
       }
       return delete this.parentTrackers[tracker];
+    }
+  };
+
+  Thread.prototype._removeFromCollectionByTracker = function(tracker, id) {
+    var collection, index, parents;
+    if (collection = this.childrenTrackers[tracker]) {
+      collection.splice(collection.indexOf(id), 1);
+      this._remove(tracker + id);
+      if (collection.indexOf(id) === -1) {
+        if (parents = this.parentTrackers[id]) {
+          index = parents.indexOf(tracker);
+          return parents.splice(index, 1);
+        }
+      }
     }
   };
 
@@ -24425,9 +24445,6 @@ Thread = (function() {
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         tracker = _ref[_i];
         constraints = ((_base = this.constraintsByTracker)[tracker] || (_base[tracker] = []));
-        if (constraints.length) {
-          debugger;
-        }
         constraints.push(constraint);
       }
     }

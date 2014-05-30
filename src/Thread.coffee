@@ -150,9 +150,6 @@ class Thread
       root._is_tracked = true
       trackers = root._trackers ||= []
       if trackers.indexOf(tracker) is -1
-        if tracker == "#a1:not([disabled])::parent .a$a1$a2"
-
-          debugger
         trackers.push(tracker)
 
   _trackCollection: (prefix, tracker) ->
@@ -176,31 +173,43 @@ class Thread
       @_remove tracker
       
   _remove: (tracker) ->
-    console.log('TRY TO KILL THIS', tracker)
     @_removeConstraintByTracker tracker
     @_removeVarByTracker tracker
-    @_removeFromCollectionsByTracker tracker
     @_removeTrackersInCollectionByTracker tracker
+    @_removeFromCollectionsByTracker tracker
 
   _removeTrackersInCollectionByTracker: (tracker) ->
     if children = @childrenTrackers[tracker]
       children = children.slice()
       for child in children
-        @_remove child
+        @_removeFromCollectionByTracker tracker, child
+      for child in children
+        @_removeTrackerWithoutCollections tracker, child
       delete @childrenTrackers[tracker]
+
+  _removeTrackerWithoutCollections: (tracker, id) ->
+    if parents = @parentTrackers[id]
+      for parent in parents
+        if parent && parent != tracker
+          return
+      @_remove id
+
 
   _removeFromCollectionsByTracker: (tracker) ->
     if parents = @parentTrackers[tracker]
       pairs = null
       for parent in parents
-        collection = @childrenTrackers[parent]
-        collection.splice collection.indexOf(tracker), 1
-        (pairs ||= []).push parent + tracker
-        console.error('kill', parent + tracker)
-      for combo in pairs
-        @_remove(combo)
+        @_removeFromCollectionByTracker(tracker, parent)
       delete @parentTrackers[tracker]
 
+  _removeFromCollectionByTracker: (tracker, id) ->
+    if collection = @childrenTrackers[tracker]
+      collection.splice collection.indexOf(id), 1
+      @_remove(tracker + id)
+      if collection.indexOf(id) == -1
+        if parents = @parentTrackers[id]
+          index = parents.indexOf(tracker)
+          parents.splice(index, 1)
       
   _removeVarByTracker: (tracker) ->
     # clean up varcache
@@ -505,8 +514,6 @@ class Thread
     if root._is_tracked
       for tracker in root._trackers
         constraints = (@constraintsByTracker[tracker] ||= [])
-        if constraints.length
-          debugger
 
         constraints.push constraint
     return constraint
