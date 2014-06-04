@@ -43,6 +43,8 @@ IdMixin =
   setupId: (el) ->
     return null unless el
     gid = @getId el
+    if el.ClassList
+      el.ClassList.patch(el)
     if !gid?       
       _id =  @uid()
       # default id to el.id
@@ -50,6 +52,8 @@ IdMixin =
       el.setAttribute('data-gss-id', gid)
       GSS._.setStyle(el, boxSizingPrefix, 'border-box')
       el._gss_id = gid 
+      if el.ClassList
+        el.ClassList.patch(el)
       GSS.View.new({el:el,id:gid})
       #if @_byIdCache[gid]? then GSS.warn("element by id cache replaced gss-id: #{gid}")
     @_byIdCache[gid] = el

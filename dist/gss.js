@@ -20437,12 +20437,6 @@ _ = {
     characters = defaultToWhiteSpace(characters);
     return String(str).replace(new RegExp("^" + characters + "+|" + characters + "+$", "g"), "");
   },
-  dasherize: function(string) {
-    var _base;
-    return (_base = (this.dasherized || (this.dasherized = {})))[string] || (_base[string] = string.replace(/[A-Z]/g, function(camelCase) {
-      return '-' + camelCase.toLowerCase();
-    }));
-  },
   setStyle: function(el, prop, value) {
     var cssText, old;
     if (!el.__setAttribute) {
@@ -20903,12 +20897,12 @@ View = (function() {
     if (!this.id) {
       throw new Error("View needs id");
     }
-    if (this.el.ClassList) {
-      this.el.ClassList.patch(this.el);
-    }
     View.byId[this.id] = this;
     this.is_positioned = false;
     this.el.gssView = this;
+    if (this.el.ClassList) {
+      this.el.ClassList.patch(this.el);
+    }
     GSS.trigger('view:attach', this);
     if (!this.matrixType) {
       this.matrixType = GSS.config.defaultMatrixType;
@@ -25158,12 +25152,18 @@ IdMixin = {
       return null;
     }
     gid = this.getId(el);
+    if (el.ClassList) {
+      el.ClassList.patch(el);
+    }
     if (gid == null) {
       _id = this.uid();
       gid = String(el.id || _id);
       el.setAttribute('data-gss-id', gid);
       GSS._.setStyle(el, boxSizingPrefix, 'border-box');
       el._gss_id = gid;
+      if (el.ClassList) {
+        el.ClassList.patch(el);
+      }
       GSS.View["new"]({
         el: el,
         id: gid
@@ -30028,17 +30028,17 @@ classListProto.add = function () {
     , token
     , updated = false
   ;
-  tokens = this.push ? this : Array.prototype.slice.call(this)
+  result = this.push ? this : Array.prototype.slice.call(this)
   do {
     token = tokens[i] + "";
     if (checkTokenAndGetIndex(this, token) === -1) {
-      tokens.push(token);
+      result.push(token);
       updated = true;
     }
   }
   while (++i < l);
   if (updated) {
-    this._updateClassName(tokens);
+    this._updateClassName(result);
   }
 };
 classListProto.remove = function () {
@@ -30110,22 +30110,18 @@ ClassList.define = function(element) {
 
 ClassList.define(elemCtrProto)
 
-var ClassListAdd, ClassListRemove
 ClassList.patch = function(element) {
   if (!element.classList) {
     element._classList = element.classList
     element.classList = new ClassList(element)
   } else {
-    if (!ClassListAdd) {
-      ClassListAdd = element.classList.add
-      ClassListRemove = element.classList.add
-    }
     element.classList.remove = ClassList.prototype.remove
-    element.classList.add = ClassList.prototype.remove
-    element.classList.toggle = ClassList.prototype.remove
+    element.classList.add = ClassList.prototype.add
+    element.classList.toggle = ClassList.prototype.toggle
     element.classList._updateClassName = function(tokens) {
       var className = this.splice ? this : tokens.join(' ')
       element.setAttribute("class", className);
+      element.className = className
     }
   }
 } 

@@ -21,12 +21,13 @@ class View
   attach: (@el,@id) => 
     if !@el then throw new Error "View needs el"
     if !@id then throw new Error "View needs id"
-    if @el.ClassList
-      @el.ClassList.patch(@el)
 
     View.byId[@id] = @
     @is_positioned = false
     @el.gssView = @
+
+    if @el.ClassList
+      @el.ClassList.patch(@el)
     
     GSS.trigger 'view:attach', @    
     if !@matrixType
@@ -40,9 +41,9 @@ class View
     
     GSS.trigger 'view:detach', @
     
-    #@scope = null
     if @el.ClassList
       @el.ClassList.unpatch(@el)
+    #@scope = null
 
     @is_positioned = false
     @el = null

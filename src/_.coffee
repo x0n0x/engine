@@ -112,6 +112,9 @@ _ =
       (if c then c.toUpperCase() else "")
     result
     
+  dasherize: (str) ->
+    @trim(str).replace(/([A-Z])/g, "-$1").replace(/[-_\s]+/g, "-").toLowerCase()
+  
   trim: (str, characters) ->
     return ""  unless str?
     return nativeTrim.call(str)  if not characters and nativeTrim
@@ -138,10 +141,6 @@ _ =
   #  frm = undefined
   #  return to
   ##
-
-  dasherize: (string) ->
-    return (@dasherized ||= {})[string] ||= string.replace /[A-Z]/g, (camelCase) ->
-      return '-' + camelCase.toLowerCase()
 
   setStyle: (el, prop, value) ->
     if !el.__setAttribute

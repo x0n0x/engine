@@ -105,17 +105,17 @@ classListProto.add = function () {
     , token
     , updated = false
   ;
-  tokens = this.push ? this : Array.prototype.slice.call(this)
+  result = this.push ? this : Array.prototype.slice.call(this)
   do {
     token = tokens[i] + "";
     if (checkTokenAndGetIndex(this, token) === -1) {
-      tokens.push(token);
+      result.push(token);
       updated = true;
     }
   }
   while (++i < l);
   if (updated) {
-    this._updateClassName(tokens);
+    this._updateClassName(result);
   }
 };
 classListProto.remove = function () {
@@ -193,11 +193,12 @@ ClassList.patch = function(element) {
     element.classList = new ClassList(element)
   } else {
     element.classList.remove = ClassList.prototype.remove
-    element.classList.add = ClassList.prototype.remove
-    element.classList.toggle = ClassList.prototype.remove
+    element.classList.add = ClassList.prototype.add
+    element.classList.toggle = ClassList.prototype.toggle
     element.classList._updateClassName = function(tokens) {
       var className = this.splice ? this : tokens.join(' ')
       element.setAttribute("class", className);
+      element.className = className
     }
   }
 } 

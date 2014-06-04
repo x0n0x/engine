@@ -42,7 +42,6 @@ describe 'Nested Rules', ->
         done()
 
     describe 'flat', ->
-    
       it 'Runs commands from sourceNode', (done) ->
         rules = [
           {
@@ -155,22 +154,22 @@ describe 'Nested Rules', ->
               ['eq', ['get$','x','$box1', '.vessel .box$vessel0'], ['number',100]]
               ['eq', ['get$','x','$box2', '.vessel .box$vessel0'], ['number',100]]
             ])
-            box1.classList.remove('box')
+            box1.setAttribute('class', '')
           OneChildDoesntMatchAnymore = (e) ->  
             expect(stringify(engine.lastWorkerCommands)).to.eql stringify([
               ['remove', '.vessel .box$vessel0$box1']
             ])
-            box1.classList.add('box')
+            box1.setAttribute('class', 'box')
           ChildMatchesAgain = (e) ->  
             expect(stringify(engine.lastWorkerCommands)).to.eql stringify([
               ['eq', ['get$','x','$box1', '.vessel .box$vessel0'], ['number',100]]
             ])
-            vessel0.classList.remove('vessel')
+            vessel0.setAttribute('class', '')
           ParentDoesntMatchAnyMore = (e) ->  
             expect(stringify(engine.lastWorkerCommands)).to.eql stringify([
               ['remove', '.vessel$vessel0', '.vessel .box$vessel0']
             ])
-            vessel0.classList.add('vessel')
+            vessel0.setAttribute('class', 'vessel')
           ParentMatchesAgain = (e) ->  
             expect(stringify(engine.lastWorkerCommands)).to.eql stringify([
               ['eq', ['get$','x','$box1', '.vessel .box$vessel0'], ['number',100]]
@@ -221,12 +220,12 @@ describe 'Nested Rules', ->
               ['eq', ['get$','x','$box1', '.vessel, #group1 .box:first-child$vessel0'], ['number',100]]
               ['eq', ['get$','x','$box3', '.vessel, #group1 .box:first-child$group1'], ['number',100]]
             ])
-            vessel0.classList.remove('vessel')
+            vessel0.setAttribute('class', '')
           OneOfParentSelectorsDoesntMatchAnymore = (e) ->
             expect(stringify(engine.lastWorkerCommands)).to.eql stringify([
               ['remove', ".vessel, #group1$vessel0", ".vessel, #group1 .box:first-child$vessel0"]
             ])
-            vessel0.classList.add('vessel')
+            vessel0.setAttribute('class', 'vessel')
           ItMatchesAgain = (e) ->
             expect(stringify(engine.lastWorkerCommands)).to.eql stringify([
               ['eq', ['get$','x','$box1', '.vessel, #group1 .box:first-child$vessel0'], ['number',100]]
@@ -336,13 +335,13 @@ describe 'Nested Rules', ->
                 ["remove",".group .vessel::scope .box:last-child$vessel1$box4"],
                 ['lte', ['get$','width','$box5', '.group .vessel::scope .box:last-child$vessel1'], ["number",100]]
               ]
-            container.firstElementChild.classList.remove('group')
+            container.firstElementChild.setAttribute('class', '')
 
           ParentDoesntMatchAnymore = (e) ->
             expect(stringify(engine.lastWorkerCommands)).to.eql stringify [
                 ['remove', '.group .vessel$vessel1', '.group .vessel::scope .box:last-child$vessel1']
               ]
-            container.firstElementChild.classList.add('group')
+            container.firstElementChild.setAttribute('class', 'group')
 
           ParentMatchesAgain = (e) ->
             expect(stringify(engine.lastWorkerCommands)).to.eql stringify [
@@ -442,13 +441,13 @@ describe 'Nested Rules', ->
                 ["remove",".group .vessel::parent .box:last-child$vessel1$box4"],
                 ['lte', ['get$','width','$box5', '.group .vessel::parent .box:last-child$vessel1'], ["number",100]]
               ]
-            container.firstElementChild.classList.remove('group')
+            container.firstElementChild.setAttribute('class', '')
 
           ParentDoesntMatchAnymore = (e) ->
             expect(stringify(engine.lastWorkerCommands)).to.eql stringify [
                 ['remove', '.group .vessel$vessel1', '.group .vessel::parent .box:last-child$vessel1']
               ]
-            container.firstElementChild.classList.add('group')
+            container.firstElementChild.setAttribute('class', 'group')
 
           ParentMatchesAgain = (e) ->
             expect(stringify(engine.lastWorkerCommands)).to.eql stringify [
@@ -688,23 +687,22 @@ describe 'Nested Rules', ->
             expect(engine.lastWorkerCommands).to.eql [
               ['remove', '.vessel .box$box1']
             ]
-            box1.classList.add('box')
+            box1.setAttribute('class', 'box')
           ChildMatchesAgain = (e) ->
             expect(engine.lastWorkerCommands).to.eql [
               ['eq', ['get$','x','$box1', '.vessel .box'], ['number',100]]
             ]
-            vessel0.classList.remove('vessel')
+            vessel0.setAttribute('class', '')
           ParentDoesntMatchAnymore = (e) ->
             expect(engine.lastWorkerCommands).to.eql [
               ['remove', '.vessel .box$box1', '.vessel .box$box2']
             ]
-            vessel0.classList.add('vessel')
+            vessel0.setAttribute('class', 'vessel')
           ParentMatchesAgain = (e) ->
             expect(engine.lastWorkerCommands).to.eql [
               ['eq', ['get$','x','$box1', '.vessel .box'], ['number',100]]
               ['eq', ['get$','x','$box2', '.vessel .box'], ['number',100]]
             ]
-            window.zzz = true
             box1.parentNode.removeChild(box1)
           ChildIsRemoved = (e) ->
             expect(engine.lastWorkerCommands).to.eql [
@@ -769,23 +767,23 @@ describe 'Nested Rules', ->
                           ['eq', ['get$','x','$box2', '.vessel .box:last-child, #group1 .box:last-child'], ['number',100]]
                           ['eq', ['get$','x','$box4', '.vessel .box:last-child, #group1 .box:last-child'], ['number',100]]
                         ])
-            box2.classList.remove('box')
+            box2.classList.remove('box') # classList is observed because el has View
           
           ChildDoesntMatchAnymore = (e) ->
             expect(engine.lastWorkerCommands).to.eql [
               ['remove', '.vessel .box:last-child, #group1 .box:last-child$box2']
             ]
-            box2.classList.add('box')
+            box2.setAttribute('class', 'box') # classList not observed here.
           ChildMatchesAgain = (e) ->
             expect(engine.lastWorkerCommands).to.eql [
               ['eq', ['get$','x','$box2', '.vessel .box:last-child, #group1 .box:last-child'], ['number',100]]
             ]
-            vessel0.classList.remove('vessel')
+            vessel0.setAttribute('class', '')
           ParentDoesntMatchAnymore = (e) ->
             expect(stringify engine.lastWorkerCommands).to.eql stringify [
               ['remove', '.vessel .box:last-child, #group1 .box:last-child$box2']
             ]
-            vessel0.classList.add('vessel')
+            vessel0.setAttribute('class', 'vessel')
           ParentMatchesAgain = (e) ->
             expect(engine.lastWorkerCommands).to.eql [
               ['eq', ['get$','x','$box2', '.vessel .box:last-child, #group1 .box:last-child'], ['number',100]]
