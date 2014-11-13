@@ -1,4 +1,3 @@
-/* gss-engine - version 1.0.4-beta (2014-11-13) - http://gridstylesheets.org */
 ;(function(){
 
 /**
@@ -20571,7 +20570,7 @@ Engine = (function(_super) {
   };
 
   Engine.prototype.preexport = function() {
-    var baseline, element, height, match, pairs, scope, width, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6,
+    var baseline, element, height, match, pairs, scope, width, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7,
       _this = this;
     if ((scope = this.scope).nodeType === 9) {
       scope = this.scope.body;
@@ -20603,12 +20602,12 @@ Engine = (function(_super) {
     if (match = (_ref5 = location.search.match(/export=([^&]+)/)) != null ? _ref5[1] : void 0) {
       if (match.indexOf('x') > -1) {
         _ref6 = match.split('x'), width = _ref6[0], height = _ref6[1];
-        baseline = 72;
+        baseline = parseInt((_ref7 = location.search.match(/baseline=([^&]+)/)) != null ? _ref7[1] : void 0) || 72;
         width = parseInt(width) * baseline;
         height = parseInt(height) * baseline;
         window.addEventListener('load', function() {
           localStorage[match] = JSON.stringify(_this["export"]());
-          return _this.postexport();
+          return _this.postexport(localStorage[match]);
         });
         document.body.style.width = width + 'px';
         this.intrinsic.properties['::window[height]'] = function() {
@@ -20629,11 +20628,14 @@ Engine = (function(_super) {
     }
   };
 
-  Engine.prototype.postexport = function() {
-    var property, result, size, value, xhr, _i, _len, _ref;
-    _ref = this.sizes;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      size = _ref[_i];
+  Engine.prototype.postexport = function(values) {
+    var callback, property, result, size, value, xhr, _i, _len, _ref, _ref1;
+    if ((callback = (_ref = location.search.match(/[&?]callback=([^&]+)/)) != null ? _ref[1] : void 0)) {
+      return window[callback](values);
+    }
+    _ref1 = this.sizes;
+    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+      size = _ref1[_i];
       if (!localStorage[size]) {
         location.search = location.search.replace(/[&?]export=([^&]+)/, '') + '?export=' + size;
         return;

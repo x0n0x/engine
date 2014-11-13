@@ -519,12 +519,12 @@ class Engine extends Domain.Events
     if match = location.search.match(/export=([^&]+)/)?[1]
       if match.indexOf('x') > -1
         [width, height] = match.split('x')
-        baseline = 72
+        baseline = parseInt(location.search.match(/baseline=([^&]+)/)?[1]) || 72
         width = parseInt(width) * baseline
         height = parseInt(height) * baseline
         window.addEventListener 'load', =>
           localStorage[match] = JSON.stringify(@export())
-          @postexport()
+          @postexport(localStorage[match])
 
         document.body.style.width = width + 'px'
         @intrinsic.properties['::window[height]'] = ->
@@ -539,7 +539,10 @@ class Engine extends Domain.Events
             localStorage.GSS_EXPORT_URL = match
           @postexport()
 
-  postexport: ->
+  postexport: (values) ->
+    if (callback = location.search.match(/[&?]callback=([^&]+)/)?[1])
+      return window[callback](values)
+
     for size in @sizes
       unless localStorage[size]
         location.search = location.search.replace(/[&?]export=([^&]+)/, '') + '?export=' + size
