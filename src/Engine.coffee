@@ -516,7 +516,7 @@ class Engine extends Domain.Events
         for width in pairs[0]
           for height in pairs[1]
             @sizes.push(width + 'x' + height)
-    if match = location.search.match(/export=([a-z0-9]+)/)?[1]
+    if match = location.search.match(/export=([^&]+)/)?[1]
       if match.indexOf('x') > -1
         [width, height] = match.split('x')
         baseline = 72
@@ -533,21 +533,33 @@ class Engine extends Domain.Events
           return width
 
       else 
-        if match == 'true'
+        if match
           localStorage.clear()
+          unless match == 'true'
+            localStorage.GSS_EXPORT_URL = match
           @postexport()
 
   postexport: ->
     for size in @sizes
       unless localStorage[size]
-        location.search = location.search.replace(/[&?]export=([a-z0-9])+/, '') + '?export=' + size
+        location.search = location.search.replace(/[&?]export=([^&]+)/, '') + '?export=' + size
         return
     result = {}
     for property, value of localStorage
       if property.match(/^\d+x\d+$/)
         result[property] = JSON.parse(value)
-    document.write(JSON.stringify(result))
 
+    if localStorage.GSS_EXPORT_URL
+      xhr = new XMLHttpRequest()
+      xhr.open('POST', decodeURIComponent(localStorage.GSS_EXPORT_URL), true);
+      xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+      xhr.onload = ->
+        localStorage.clear()
+        window.close()
+      xhr.send(JSON.stringify(result));
+    else
+      localStorage.clear()
+      document.write(JSON.stringify(result))
   export: ->
     values = {}
     for path, value of @values

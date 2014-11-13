@@ -1,3 +1,4 @@
+/* gss-engine - version 1.0.4-beta (2014-11-13) - http://gridstylesheets.org */
 ;(function(){
 
 /**
@@ -20599,7 +20600,7 @@ Engine = (function(_super) {
         }
       }
     }
-    if (match = (_ref5 = location.search.match(/export=([a-z0-9]+)/)) != null ? _ref5[1] : void 0) {
+    if (match = (_ref5 = location.search.match(/export=([^&]+)/)) != null ? _ref5[1] : void 0) {
       if (match.indexOf('x') > -1) {
         _ref6 = match.split('x'), width = _ref6[0], height = _ref6[1];
         baseline = 72;
@@ -20617,8 +20618,11 @@ Engine = (function(_super) {
           return width;
         };
       } else {
-        if (match === 'true') {
+        if (match) {
           localStorage.clear();
+          if (match !== 'true') {
+            localStorage.GSS_EXPORT_URL = match;
+          }
           return this.postexport();
         }
       }
@@ -20626,12 +20630,12 @@ Engine = (function(_super) {
   };
 
   Engine.prototype.postexport = function() {
-    var property, result, size, value, _i, _len, _ref;
+    var property, result, size, value, xhr, _i, _len, _ref;
     _ref = this.sizes;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       size = _ref[_i];
       if (!localStorage[size]) {
-        location.search = location.search.replace(/[&?]export=([a-z0-9])+/, '') + '?export=' + size;
+        location.search = location.search.replace(/[&?]export=([^&]+)/, '') + '?export=' + size;
         return;
       }
     }
@@ -20642,7 +20646,19 @@ Engine = (function(_super) {
         result[property] = JSON.parse(value);
       }
     }
-    return document.write(JSON.stringify(result));
+    if (localStorage.GSS_EXPORT_URL) {
+      xhr = new XMLHttpRequest();
+      xhr.open('POST', decodeURIComponent(localStorage.GSS_EXPORT_URL), true);
+      xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+      xhr.onload = function() {
+        localStorage.clear();
+        return window.close();
+      };
+      return xhr.send(JSON.stringify(result));
+    } else {
+      localStorage.clear();
+      return document.write(JSON.stringify(result));
+    }
   };
 
   Engine.prototype["export"] = function() {
@@ -28197,7 +28213,8 @@ Document = (function(_super) {
         _this.resizer = void 0;
         return _this.solve(id + ' resized', function() {
           this.intrinsic.verify(id, "width");
-          return this.intrinsic.verify(id, "height");
+          this.intrinsic.verify(id, "height");
+          return this.intrinsic.solve([]);
         });
       }, 20);
     },
