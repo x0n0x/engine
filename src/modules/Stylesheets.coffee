@@ -72,6 +72,12 @@ class Stylesheets
       return 
     rules = sheet.rules || sheet.cssRules
     
+    dummy = @engine.scope.style
+    if dummy[property] == undefined
+      for prefix in @engine.intrinsic.prefixes
+        unless dummy[dashed = '-' + prefix + '-' + property] == undefined
+          property = dashed
+          break
 
     if needle != operation.sourceIndex || value == ''
       generated = rules[previous.length]
@@ -92,6 +98,7 @@ class Stylesheets
       body = property + ':' + value
       selectors = @getSelector(operation)
       index = sheet.insertRule(selectors + "{" + body + "}", previous.length)
+    
     return true
 
   watch: (operation, continuation, stylesheet) ->

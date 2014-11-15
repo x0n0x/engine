@@ -29956,7 +29956,7 @@ Stylesheets = (function() {
   };
 
   Stylesheets.prototype.update = function(operation, property, value, stylesheet, rule) {
-    var body, dump, generated, index, item, needle, next, ops, other, previous, rules, selectors, sheet, watchers, _i, _j, _len, _ref;
+    var body, dashed, dummy, dump, generated, index, item, needle, next, ops, other, prefix, previous, rules, selectors, sheet, watchers, _i, _j, _k, _len, _len1, _ref, _ref1;
     watchers = this.getWatchers(stylesheet);
     dump = this.getStylesheet(stylesheet);
     sheet = dump.sheet;
@@ -29981,6 +29981,17 @@ Stylesheets = (function() {
       return;
     }
     rules = sheet.rules || sheet.cssRules;
+    dummy = this.engine.scope.style;
+    if (dummy[property] === void 0) {
+      _ref = this.engine.intrinsic.prefixes;
+      for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+        prefix = _ref[_j];
+        if (dummy[dashed = '-' + prefix + '-' + property] !== void 0) {
+          property = dashed;
+          break;
+        }
+      }
+    }
     if (needle !== operation.sourceIndex || value === '') {
       generated = rules[previous.length];
       generated.style[property] = value;
@@ -29988,7 +29999,7 @@ Stylesheets = (function() {
       if (needle === operation.sourceIndex) {
         needle++;
       }
-      for (index = _j = needle, _ref = watchers.length; needle <= _ref ? _j < _ref : _j > _ref; index = needle <= _ref ? ++_j : --_j) {
+      for (index = _k = needle, _ref1 = watchers.length; needle <= _ref1 ? _k < _ref1 : _k > _ref1; index = needle <= _ref1 ? ++_k : --_k) {
         if (ops = watchers[index]) {
           next = this.getRule(watchers[ops[0]][0]);
           if (next !== rule) {
