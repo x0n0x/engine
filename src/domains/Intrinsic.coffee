@@ -87,10 +87,23 @@ class Intrinsic extends Numeric
     path = @Variable.getPath(element, 'intrinsic-' + property)
     if @watchers?[path]
       return
+
+    if @prefixed?[camel]
+      camel = @prefixed[camel]
+    else
+      if element.style[camel] == undefined
+        capital = camel.charAt(0).toUpperCase() + camel.substring(1)
+        for prefix in @prefixes
+          prefixed = prefix + capital
+          if element.style[prefixed] != undefined
+            camel = @prefixed[camel] = prefixed
+            break
+    
     element.style[camel] = value
+    
     return
 
-
+  prefixes: ['webkit', 'moz', 'ms']
 
   perform: ->
     if arguments.length < 4

@@ -1,3 +1,4 @@
+/* gss-engine - version 1.0.4-beta (2014-11-16) - http://gridstylesheets.org */
 ;(function(){
 
 /**
@@ -27767,7 +27768,7 @@ Intrinsic = (function(_super) {
   };
 
   Intrinsic.prototype.restyle = function(element, property, value, continuation, operation) {
-    var bits, camel, first, id, j, parent, path, position, prop, shared, stylesheet, _ref, _ref1;
+    var bits, camel, capital, first, id, j, parent, path, position, prefix, prefixed, prop, shared, stylesheet, _i, _len, _ref, _ref1, _ref2, _ref3;
     if (value == null) {
       value = '';
     }
@@ -27833,8 +27834,26 @@ Intrinsic = (function(_super) {
     if ((_ref1 = this.watchers) != null ? _ref1[path] : void 0) {
       return;
     }
+    if ((_ref2 = this.prefixed) != null ? _ref2[camel] : void 0) {
+      camel = this.prefixed[camel];
+    } else {
+      if (element.style[camel] === void 0) {
+        capital = camel.charAt(0).toUpperCase() + camel.substring(1);
+        _ref3 = this.prefixes;
+        for (_i = 0, _len = _ref3.length; _i < _len; _i++) {
+          prefix = _ref3[_i];
+          prefixed = prefix + capital;
+          if (element.style[prefixed] !== void 0) {
+            camel = this.prefixed[camel] = prefixed;
+            break;
+          }
+        }
+      }
+    }
     element.style[camel] = value;
   };
+
+  Intrinsic.prototype.prefixes = ['webkit', 'moz', 'ms'];
 
   Intrinsic.prototype.perform = function() {
     if (arguments.length < 4) {
@@ -28197,7 +28216,8 @@ Document = (function(_super) {
         _this.resizer = void 0;
         return _this.solve(id + ' resized', function() {
           this.intrinsic.verify(id, "width");
-          return this.intrinsic.verify(id, "height");
+          this.intrinsic.verify(id, "height");
+          return this.intrinsic.solve([]);
         });
       }, 20);
     },
@@ -35855,7 +35875,7 @@ module.exports = {
     "vendor/MutationObserver.classList.js"
   ],
   "dependencies": {
-    "gss/ccss-compiler": "new",
+    "gss/ccss-compiler": "64f0f83e6b331625c62d6c54e69b0db6a2540c03",
     "d4tocchini/customevent-polyfill": "*",
     "slightlyoff/cassowary.js": "*"
   },
