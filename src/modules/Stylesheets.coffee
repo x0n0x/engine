@@ -72,7 +72,7 @@ class Stylesheets
       return 
     rules = sheet.rules || sheet.cssRules
     
-    dummy = @engine.scope.style
+    dummy = dump.style
     if dummy[property] == undefined
       for prefix in @engine.intrinsic.prefixes
         unless dummy[dashed = '-' + prefix + '-' + property] == undefined
@@ -80,8 +80,13 @@ class Stylesheets
           break
 
     if needle != operation.sourceIndex || value == ''
-      generated = rules[previous.length]
-      generated.style[property] = value
+      index = previous.length
+      generated = rules[index]
+      text = generated.cssText
+      text = text.substring(0, text.lastIndexOf('}') - 1) + ';' + property + ':' + value + '}'
+      console.error(text, 'lol', index)
+      sheet.deleteRule(index)
+      index = sheet.insertRule(text, index)
 
       next = undefined
       if needle == operation.sourceIndex

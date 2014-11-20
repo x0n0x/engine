@@ -1,4 +1,4 @@
-/* gss-engine - version 1.0.4-beta (2014-11-16) - http://gridstylesheets.org */
+/* gss-engine - version 1.0.4-beta (2014-11-21) - http://gridstylesheets.org */
 ;(function(){
 
 /**
@@ -29956,7 +29956,7 @@ Stylesheets = (function() {
   };
 
   Stylesheets.prototype.update = function(operation, property, value, stylesheet, rule) {
-    var body, dashed, dummy, dump, generated, index, item, needle, next, ops, other, prefix, previous, rules, selectors, sheet, watchers, _i, _j, _k, _len, _len1, _ref, _ref1;
+    var body, dashed, dummy, dump, generated, index, item, needle, next, ops, other, prefix, previous, rules, selectors, sheet, text, watchers, _i, _j, _k, _len, _len1, _ref, _ref1;
     watchers = this.getWatchers(stylesheet);
     dump = this.getStylesheet(stylesheet);
     sheet = dump.sheet;
@@ -29981,7 +29981,7 @@ Stylesheets = (function() {
       return;
     }
     rules = sheet.rules || sheet.cssRules;
-    dummy = this.engine.scope.style;
+    dummy = dump.style;
     if (dummy[property] === void 0) {
       _ref = this.engine.intrinsic.prefixes;
       for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
@@ -29993,8 +29993,13 @@ Stylesheets = (function() {
       }
     }
     if (needle !== operation.sourceIndex || value === '') {
-      generated = rules[previous.length];
-      generated.style[property] = value;
+      index = previous.length;
+      generated = rules[index];
+      text = generated.cssText;
+      text = text.substring(0, text.lastIndexOf('}') - 1) + ';' + property + ':' + value + '}';
+      console.error(text, 'lol', index);
+      sheet.deleteRule(index);
+      index = sheet.insertRule(text, index);
       next = void 0;
       if (needle === operation.sourceIndex) {
         needle++;
