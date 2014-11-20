@@ -84,7 +84,6 @@ class Stylesheets
       generated = rules[index]
       text = generated.cssText
       text = text.substring(0, text.lastIndexOf('}') - 1) + ';' + property + ':' + value + '}'
-      console.error(text, 'lol', index)
       sheet.deleteRule(index)
       index = sheet.insertRule(text, index)
 
