@@ -1,4 +1,3 @@
-/* gss-engine - version 1.0.4-beta (2014-12-12) - http://gridstylesheets.org */
 ;(function(){
 
 /**
@@ -27760,11 +27759,13 @@ Queries = (function() {
   Queries.prototype.getScope = function(node, continuation) {
     var code, el, id, index, length, parent;
     if (!node) {
-      if ((index = continuation.lastIndexOf('$')) > -1) {
-        code = continuation.charCodeAt((length = continuation.length) - 1);
-        if (continuation.charCodeAt((length = continuation.length) - 1) === 8595) {
-          length--;
-        }
+      code = continuation.charCodeAt((length = continuation.length) - 1);
+      if (code === 8595) {
+        length--;
+      } else if (code === 8594) {
+        length = continuation.lastIndexOf(this.DESCEND);
+      }
+      if ((index = continuation.lastIndexOf('$', length)) > -1) {
         id = continuation.substring(index, length);
         if (el = this.engine.identity[id] || this.engine.queries[continuation.substring(0, length)]) {
           if (el.scoped) {
@@ -27809,7 +27810,11 @@ Queries = (function() {
         return id;
       }
       if (result = this.engine.identity[id]) {
-        return this.engine.getScopeElement(result);
+        if (result.operations) {
+          return this.engine.getScopeElement(result);
+        } else {
+          return result;
+        }
       }
     }
     if (result = this[continuation.substring(0, last + 1)]) {
@@ -28477,7 +28482,6 @@ Axioms = (function() {
       return ['+', ['get', this.getPath(id, 'x')], ['/', ['get', this.getPath(id, 'width')], 2]];
     },
     y: function(scope, path) {
-      debugger;
       var id;
       id = this.identify(scope);
       return ['+', ['get', this.getPath(id, 'y')], ['/', ['get', this.getPath(id, 'height')], 2]];

@@ -607,11 +607,14 @@ class Queries
   # Scope variables and locals to the stylesheet
   getScope: (node, continuation) ->
     if !node
-      if (index = continuation.lastIndexOf('$')) > -1
-        code = continuation.charCodeAt((length = continuation.length) - 1)
-        if continuation.charCodeAt((length = continuation.length) - 1) == 8595 #descend
-          length--
+      code = continuation.charCodeAt((length = continuation.length) - 1)
+      if code == 8595 #descend
+        length--
+      else if code == 8594 # pair, pop scope
+        length = continuation.lastIndexOf(@DESCEND)
 
+      if (index = continuation.lastIndexOf('$', length)) > -1
+        
         id = continuation.substring(index, length)
         if el = @engine.identity[id] || @engine.queries[continuation.substring(0, length)]
           if el.scoped
@@ -649,8 +652,11 @@ class Queries
 
       # Element in collection
       if result = @engine.identity[id]
-        return @engine.getScopeElement(result)
-
+        if result.operations
+          return @engine.getScopeElement(result)
+        else
+          return result
+          
     # Singular element
     if result = @[continuation.substring(0, last + 1)]
       return @engine.getScopeElement(result)
